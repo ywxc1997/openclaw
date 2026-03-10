@@ -105,11 +105,16 @@ async function resolveOutputPath(params: {
     if (stat.isDirectory()) {
       return path.join(resolved, basename);
     }
-  } catch {
-    // Treat as a file path when the target does not exist yet.
+    // If it's a file, use it directly as the archive path
+    return resolved;
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    // Path doesn't exist — default to treating it as a directory
+    if (code === "ENOENT") {
+      return path.join(resolved, basename);
+    }
+    throw err;
   }
-
-  return resolved;
 }
 
 async function assertOutputPathReady(outputPath: string): Promise<void> {
